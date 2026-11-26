@@ -109,6 +109,16 @@ uv sync
 uv run get-holdings
 ```
 
+The maintained MarketDesk workflow uses an isolated three-index publication
+profile and writes it under `marketdesk/`:
+
+```bash
+INDEX_ETFS_SYMBOLS=spy,qqq,iwm INDEX_ETFS_OUTPUT_DIR=marketdesk uv run get-holdings
+```
+
+Only SPY, QQQ, and IWM are fetched in that profile. Other catalog entries are
+not downloaded, validated, or able to block its publication.
+
 That rewrites `tickers/*.txt` from the latest available holdings data.
 
 A full refresh fetches and validates every source. Repeated ticker rows are reported and collapsed before count validation. The `etfs` object in `metadata/latest.json` is keyed by ETF symbol.

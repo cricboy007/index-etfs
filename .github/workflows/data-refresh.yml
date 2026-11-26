@@ -32,13 +32,16 @@ jobs:
         run: uv sync --locked --all-extras --dev
 
       - name: Update ETF data
+        env:
+          INDEX_ETFS_SYMBOLS: spy,qqq,iwm
+          INDEX_ETFS_OUTPUT_DIR: marketdesk
         run: uv run get-holdings
 
       - name: Commit and push if it changed
         run: |-
           git config user.name "Major Hayden"
           git config user.email "major@mhtx.net"
-          git add tickers/*.txt metadata/*.json README.md
+          git add marketdesk/tickers/*.txt marketdesk/metadata/*.json README.md
           timestamp=$(date -u)
           git commit -m "Updating ETF data: ${timestamp}" || exit 0
           git clean -fxd

@@ -210,6 +210,41 @@ def test_successful_refresh_writes_tickers_and_symbol_keyed_metadata(
     _assert_no_staging_directories(tmp_path)
 
 
+def test_selected_publication_profile_fetches_only_requested_symbols(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    small_catalog: dict[str, ETFConfig],
+) -> None:
+    """A focused profile neither fetches nor publishes unrelated ETF holdings."""
+    output_dir = tmp_path / "marketdesk"
+    monkeypatch.setenv("INDEX_ETFS_SYMBOLS", "alpha")
+    monkeypatch.setenv("INDEX_ETFS_OUTPUT_DIR", str(output_dir))
+    fetched: list[str] = []
+
+    def load(config: ETFConfig) -> pl.DataFrame:
+        fetched.append(config.url)
+        return _holdings_for(config)
+
+    monkeypatch.setattr(holdings, "load_holdings", load)
+
+    holdings.main()
+
+    assert fetched == ["https://example.com/alpha"]
+    assert (output_dir / "tickers" / "alpha.txt").is_file()
+    assert not (output_dir / "tickers" / "beta.txt").exists()
+    metadata = json.loads((output_dir / "metadata" / "latest.json").read_text())
+    assert set(metadata["etfs"]) == {"alpha"}
+
+
+def test_selected_publication_profile_rejects_unknown_symbol(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("INDEX_ETFS_SYMBOLS", "spy,unknown")
+
+    with pytest.raises(ValueError, match="unknown"):
+        holdings._selected_symbols()
+
+
 def test_metadata_replace_failure_propagates_after_ticker_publication(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

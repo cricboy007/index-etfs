@@ -1,5 +1,6 @@
 """📊 Extract ticker symbols from index ETFs."""
 
+import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
@@ -9,6 +10,21 @@ from .catalog import ETF_CONFIGS, validate_catalog, validate_count
 from .changes import compare_membership
 from .outputs import save_holdings, write_metadata
 from .sources import filter_and_clean, load_holdings
+
+
+def _selected_symbols() -> tuple[str, ...]:
+    """Return the optional environment-selected publication profile."""
+    raw = os.environ.get("INDEX_ETFS_SYMBOLS", "").strip()
+    if not raw:
+        return tuple(ETF_CONFIGS)
+
+    symbols = tuple(dict.fromkeys(part.strip().lower() for part in raw.split(",") if part.strip()))
+    unknown = sorted(set(symbols) - set(ETF_CONFIGS))
+    if unknown:
+        raise ValueError(f"Unknown selected ETF symbols: {', '.join(unknown)}")
+    if not symbols:
+        raise ValueError("INDEX_ETFS_SYMBOLS did not contain any ETF symbols")
+    return symbols
 
 
 def _fetch_holdings(symbol_lower: str) -> pl.DataFrame:
@@ -57,12 +73,12 @@ def _publish_staged_files(staging_dir: Path, output_dir: Path) -> None:
 
 
 def main() -> None:
-    """🚀 Download all ETF holdings."""
+    """🚀 Download the configured ETF publication profile."""
     validate_catalog()
-    output_dir = Path.cwd()
+    output_dir = Path(os.environ.get("INDEX_ETFS_OUTPUT_DIR", Path.cwd()))
     results: dict[str, pl.DataFrame] = {}
 
-    for symbol in ETF_CONFIGS:
+    for symbol in _selected_symbols():
         print(f"📥 Fetching and validating {symbol.upper()}...")
         results[symbol] = _fetch_holdings(symbol)
         print(f"  ✅ {symbol.upper()} ready ({len(results[symbol])} rows)")
