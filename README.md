@@ -119,6 +119,9 @@ INDEX_ETFS_SYMBOLS=spy,qqq,iwm INDEX_ETFS_OUTPUT_DIR=marketdesk uv run get-holdi
 Only SPY, QQQ, and IWM are fetched in that profile. Other catalog entries are
 not downloaded, validated, or able to block its publication.
 
+The focused workflow refreshes this publication daily at 08:17 UTC. The
+non-zero minute avoids GitHub Actions' top-of-hour scheduling congestion.
+
 That rewrites `tickers/*.txt` from the latest available holdings data.
 
 A full refresh fetches and validates every source. Repeated ticker rows are reported and collapsed before count validation. The `etfs` object in `metadata/latest.json` is keyed by ETF symbol.

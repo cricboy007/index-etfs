@@ -2,7 +2,8 @@ name: Data refresh
 
 on:
   schedule:
-      - cron: '0 8 * * *'
+      # Avoid the top of the hour, where scheduled runs may be delayed or dropped.
+      - cron: '17 8 * * *'
   workflow_dispatch:
 
 permissions:
